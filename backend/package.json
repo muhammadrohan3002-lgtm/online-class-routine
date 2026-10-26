@@ -1,0 +1,24 @@
+{
+  "name": "smart-routine-backend",
+  "version": "1.0.0",
+  "description": "Smart Routine & Management REST API backend with Next.js App Router and MongoDB Atlas",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "node ./node_modules/next/dist/bin/next dev -H 0.0.0.0 -p 5000",
+    "build": "node ./node_modules/next/dist/bin/next build",
+    "start": "node ./node_modules/next/dist/bin/next start -H 0.0.0.0 -p 5000",
+    "lint": "next lint",
+    "test": "node --test tests/business-logic.test.mjs",
+    "seed": "node --env-file=.env ./scripts/seed.mjs"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.10.0",
+    "next": "^14.2.15",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {}
+}
