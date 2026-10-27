@@ -1,5 +1,5 @@
 import { getDatabase } from '@/lib/mongodb';
-import { getAuthenticatedUser } from '@/lib/auth';
+import { getAuthenticatedUser, requireRegisteredUser } from '@/lib/auth';
 import { successResponse, errorResponse, unauthorizedResponse, serverErrorResponse } from '@/lib/api-response';
 export async function GET(request) {
     try {
@@ -66,6 +66,8 @@ export async function POST(request) {
         const user = await getAuthenticatedUser(request);
         if (!user)
             return unauthorizedResponse();
+        const guestErr = requireRegisteredUser(user);
+        if (guestErr) return guestErr;
         const body = await request.json().catch(() => ({}));
         const { title, description, dueDate, dueTime, priority, status, category } = body;
         if (!title || typeof title !== 'string' || !title.trim()) {

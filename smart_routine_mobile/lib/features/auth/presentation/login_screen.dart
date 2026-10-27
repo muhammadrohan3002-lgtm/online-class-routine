@@ -2,14 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_strings.dart';
 import '../../../core/widgets/custom_button.dart';
 import '../../../core/widgets/custom_text_field.dart';
 import '../../../core/widgets/error_banner.dart';
 import '../providers/auth_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+  final String? initialEmail;
+  final bool isNewlyRegistered;
+
+  const LoginScreen({
+    super.key,
+    this.initialEmail,
+    this.isNewlyRegistered = false,
+  });
 
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
@@ -17,8 +23,16 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController(text: 'student@cse.edu');
-  final _passwordController = TextEditingController(text: 'student123');
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialEmail != null && widget.initialEmail!.isNotEmpty) {
+      _emailController.text = widget.initialEmail!;
+    }
+  }
 
   @override
   void dispose() {
@@ -53,7 +67,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(AppStrings.appName),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          tooltip: 'Back to Welcome',
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/welcome');
+            }
+          },
+        ),
+        title: const Text('Sign In'),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_ethernet_rounded),
@@ -114,7 +139,46 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           color: Theme.of(context).hintColor,
                         ),
                   ),
-                  const SizedBox(height: 28),
+                  if (widget.isNewlyRegistered) ...[
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 20),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppColors.successContainer.withOpacity(0.4),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.success.withOpacity(0.4)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 24),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Account Created Successfully!',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    color: AppColors.success,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Enter your password below to sign in to your dashboard.',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Theme.of(context).textTheme.bodySmall?.color,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
 
                   if (authState.errorMessage != null)
                     ErrorBanner(message: authState.errorMessage!),

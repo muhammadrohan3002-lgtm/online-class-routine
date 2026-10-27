@@ -1,6 +1,6 @@
 import { ObjectId } from 'mongodb';
 import { getDatabase } from '@/lib/mongodb';
-import { getAuthenticatedUser } from '@/lib/auth';
+import { getAuthenticatedUser, requireRegisteredUser } from '@/lib/auth';
 import { successResponse, errorResponse, unauthorizedResponse, serverErrorResponse } from '@/lib/api-response';
 import { doIntervalsOverlap, isTimeRangeValid } from '@/lib/validation';
 export async function GET(request) {
@@ -48,6 +48,8 @@ export async function POST(request) {
         const user = await getAuthenticatedUser(request);
         if (!user)
             return unauthorizedResponse();
+        const guestErr = requireRegisteredUser(user);
+        if (guestErr) return guestErr;
         const body = await request.json().catch(() => ({}));
         const { courseId, courseName, courseCode, teacher, room, dayOfWeek, startTime, endTime, colorHex, } = body;
         if (!courseName || !courseCode || !startTime || !endTime || dayOfWeek === undefined) {

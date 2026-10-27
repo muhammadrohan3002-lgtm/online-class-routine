@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/date_time_utils.dart';
 import '../../../core/widgets/error_banner.dart';
+import '../../../core/widgets/guest_restriction_dialog.dart';
 import '../../../core/widgets/loading_indicator.dart';
 import '../../../core/widgets/stat_card.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -201,13 +202,19 @@ class DashboardScreen extends ConsumerWidget {
                           title: 'Add Class',
                           icon: Icons.add_circle_outline_rounded,
                           color: AppColors.primary,
-                          onTap: () => context.push('/routine/add'),
+                          onTap: () {
+                            if (checkGuestRestricted(context, ref, action: 'add class schedules')) return;
+                            context.push('/routine/add');
+                          },
                         ),
                         QuickActionItem(
                           title: 'New Task',
                           icon: Icons.add_task_rounded,
                           color: AppColors.warning,
-                          onTap: () => context.push('/tasks/add'),
+                          onTap: () {
+                            if (checkGuestRestricted(context, ref, action: 'create new tasks')) return;
+                            context.push('/tasks/add');
+                          },
                         ),
                         QuickActionItem(
                           title: 'Attendance',

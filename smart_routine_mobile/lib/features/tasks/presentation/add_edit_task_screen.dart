@@ -6,6 +6,7 @@ import '../../../core/constants/app_strings.dart';
 import '../../../core/utils/date_time_utils.dart';
 import '../../../core/widgets/custom_button.dart';
 import '../../../core/widgets/custom_text_field.dart';
+import '../../../core/widgets/guest_restriction_dialog.dart';
 import '../providers/task_provider.dart';
 
 class AddEditTaskScreen extends ConsumerStatefulWidget {
@@ -82,6 +83,13 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen> {
   }
 
   Future<void> _handleSave() async {
+    if (checkGuestRestricted(
+      context,
+      ref,
+      action: widget.taskId != null ? 'edit tasks' : 'create tasks',
+    )) {
+      return;
+    }
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSaving = true);

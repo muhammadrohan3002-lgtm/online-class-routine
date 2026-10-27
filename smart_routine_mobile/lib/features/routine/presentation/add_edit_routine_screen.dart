@@ -7,6 +7,7 @@ import '../../../core/utils/conflict_detector.dart';
 import '../../../core/utils/date_time_utils.dart';
 import '../../../core/widgets/custom_button.dart';
 import '../../../core/widgets/custom_text_field.dart';
+import '../../../core/widgets/guest_restriction_dialog.dart';
 import '../../courses/providers/course_provider.dart';
 import '../providers/routine_provider.dart';
 
@@ -147,6 +148,13 @@ class _AddEditRoutineScreenState extends ConsumerState<AddEditRoutineScreen> {
   }
 
   Future<void> _handleSave() async {
+    if (checkGuestRestricted(
+      context,
+      ref,
+      action: widget.routineId != null ? 'edit class schedules' : 'add class schedules',
+    )) {
+      return;
+    }
     if (!_formKey.currentState!.validate()) return;
 
     final startStr = DateTimeUtils.timeOfDayToString(_startTime);

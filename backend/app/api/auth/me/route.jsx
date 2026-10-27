@@ -1,5 +1,5 @@
 import { getDatabase } from '@/lib/mongodb';
-import { getAuthenticatedUser, hashPassword, comparePassword } from '@/lib/auth';
+import { getAuthenticatedUser, hashPassword, comparePassword, requireRegisteredUser, isGuestUser } from '@/lib/auth';
 import { successResponse, errorResponse, unauthorizedResponse, serverErrorResponse } from '@/lib/api-response';
 export async function GET(request) {
     try {
@@ -15,6 +15,7 @@ export async function GET(request) {
             department: user.department || '',
             institution: user.institution || '',
             attendanceThreshold: user.attendanceThreshold ?? 75,
+            isGuest: isGuestUser(user),
             createdAt: user.createdAt,
         });
     }
@@ -28,6 +29,8 @@ export async function PUT(request) {
         if (!user) {
             return unauthorizedResponse();
         }
+        const guestErr = requireRegisteredUser(user);
+        if (guestErr) return guestErr;
         const body = await request.json().catch(() => ({}));
         const { name, studentId, department, institution, attendanceThreshold, currentPassword, newPassword } = body;
         const db = await getDatabase();

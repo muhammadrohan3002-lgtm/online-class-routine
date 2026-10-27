@@ -165,7 +165,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               title: const Text('Sign Out', style: TextStyle(color: AppColors.errorText, fontWeight: FontWeight.bold)),
               onTap: () {
                 ref.read(authProvider.notifier).logout();
-                context.go('/login');
+                context.go('/welcome');
               },
             ),
             const SizedBox(height: 30),

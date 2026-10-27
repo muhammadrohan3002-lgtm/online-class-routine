@@ -4,6 +4,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/date_time_utils.dart';
 import '../../../core/widgets/custom_button.dart';
 import '../../../core/widgets/custom_text_field.dart';
+import '../../../core/widgets/guest_restriction_dialog.dart';
 import '../../courses/providers/course_provider.dart';
 import '../providers/attendance_provider.dart';
 
@@ -66,6 +67,7 @@ class _RecordAttendanceDialogState extends ConsumerState<RecordAttendanceDialog>
   }
 
   Future<void> _handleSave() async {
+    if (checkGuestRestricted(context, ref, action: 'record attendance')) return;
     if (_selectedCourseId == null || _selectedCourseId!.isEmpty) {
       setState(() => _errorMessage = 'Please select a course');
       return;

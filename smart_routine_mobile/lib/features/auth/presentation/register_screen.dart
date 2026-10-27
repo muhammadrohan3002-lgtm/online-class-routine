@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/custom_button.dart';
 import '../../../core/widgets/custom_text_field.dart';
 import '../../../core/widgets/error_banner.dart';
@@ -19,7 +20,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _studentIdController = TextEditingController();
-  final _departmentController = TextEditingController(text: 'Computer Science & Engineering');
+  final _departmentController = TextEditingController();
   final _institutionController = TextEditingController();
 
   @override
@@ -36,15 +37,52 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final email = _emailController.text.trim();
     final success = await ref.read(authProvider.notifier).register(
-          name: _nameController.text,
-          email: _emailController.text,
+          name: _nameController.text.trim(),
+          email: email,
           password: _passwordController.text,
-          studentId: _studentIdController.text,
-          department: _departmentController.text,
-          institution: _institutionController.text,
+          studentId: _studentIdController.text.trim(),
+          department: _departmentController.text.trim(),
+          institution: _institutionController.text.trim(),
         );
 
+    if (success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Account created successfully! Please sign in with your email and password.',
+          ),
+          backgroundColor: AppColors.success,
+          duration: Duration(seconds: 4),
+        ),
+      );
+      context.go('/login?email=${Uri.encodeComponent(email)}&registered=true');
+    } else if (mounted) {
+      final error = ref.read(authProvider).errorMessage ?? 'Registration failed. Please check your information and try again.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  error,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleGuestLogin() async {
+    final success = await ref.read(authProvider.notifier).loginAsGuest();
     if (success && mounted) {
       context.go('/dashboard');
     }
@@ -56,7 +94,25 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          tooltip: 'Back',
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/welcome');
+            }
+          },
+        ),
         title: const Text('Create Account'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_ethernet_rounded),
+            tooltip: 'Server Connection Settings',
+            onPressed: () => context.push('/settings/server'),
+          ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -87,12 +143,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // Full Name
                 CustomTextField(
                   controller: _nameController,
-                  label: 'Full Name *',
-                  hint: 'e.g. Alex Morgan',
+                  label: 'Full Name',
+                  hint: 'Enter your name',
                   prefixIcon: Icons.person_outline_rounded,
                   textCapitalization: TextCapitalization.words,
                   validator: (val) {
-                    if (val == null || val.trim().isEmpty) return 'Full name is required';
+                    if (val == null || val.trim().isEmpty) {
+                      return 'Full name is required';
+                    }
                     return null;
                   },
                 ),
@@ -101,12 +159,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // Email
                 CustomTextField(
                   controller: _emailController,
-                  label: 'Email Address *',
-                  hint: 'alex@cse.edu',
+                  label: 'Your Email Address',
+                  hint: 'Enter your email',
                   prefixIcon: Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress,
                   validator: (val) {
-                    if (val == null || val.trim().isEmpty) return 'Email is required';
+                    if (val == null || val.trim().isEmpty) {
+                      return 'Email is required';
+                    }
                     if (!val.contains('@') || !val.contains('.')) {
                       return 'Enter a valid email address';
                     }
@@ -118,13 +178,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // Password
                 CustomTextField(
                   controller: _passwordController,
-                  label: 'Password *',
-                  hint: 'Minimum 6 characters',
+                  label: 'Password',
+                  hint: 'Your password',
                   prefixIcon: Icons.lock_outline_rounded,
                   isPassword: true,
                   validator: (val) {
-                    if (val == null || val.isEmpty) return 'Password is required';
-                    if (val.length < 6) return 'Password must be at least 6 characters';
+                    if (val == null || val.isEmpty) {
+                      return 'Password is required';
+                    }
+                    if (val.length < 6) {
+                      return 'Password must be at least 6 characters';
+                    }
                     return null;
                   },
                 ),
@@ -134,7 +198,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 CustomTextField(
                   controller: _studentIdController,
                   label: 'Student ID (Optional)',
-                  hint: 'e.g. 2026-CSE-042',
+                  hint: '02724100051.....',
                   prefixIcon: Icons.badge_outlined,
                 ),
                 const SizedBox(height: 16),
@@ -143,7 +207,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 CustomTextField(
                   controller: _departmentController,
                   label: 'Department',
-                  hint: 'e.g. Computer Science & Engineering',
+                  hint: 'write Your Department',
                   prefixIcon: Icons.code_rounded,
                 ),
                 const SizedBox(height: 16),
@@ -152,7 +216,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 CustomTextField(
                   controller: _institutionController,
                   label: 'University / College',
-                  hint: 'e.g. University of Technology',
+                  hint: 'write Your University',
                   prefixIcon: Icons.account_balance_outlined,
                 ),
                 const SizedBox(height: 28),
@@ -174,10 +238,37 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     TextButton(
-                      onPressed: () => context.pop(),
-                      child: const Text('Sign In', style: TextStyle(fontWeight: FontWeight.bold)),
+                      onPressed: () {
+                        if (context.canPop()) {
+                          context.pop();
+                        } else {
+                          context.go('/login');
+                        }
+                      },
+                      child: const Text(
+                        'Sign In',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 12),
+
+                // Continue as guest
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: const Icon(
+                    Icons.person_pin_circle_outlined,
+                    size: 18,
+                  ),
+                  label: const Text('Or Continue as Guest'),
+                  onPressed:
+                      authState.isLoading ? null : _handleGuestLogin,
                 ),
               ],
             ),

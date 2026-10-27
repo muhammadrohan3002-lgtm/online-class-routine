@@ -6,6 +6,8 @@ import '../../../core/constants/app_strings.dart';
 import '../../../core/utils/date_time_utils.dart';
 import '../../../core/widgets/empty_state_view.dart';
 import '../../../core/widgets/error_banner.dart';
+import '../../../core/widgets/guest_mode_banner.dart';
+import '../../../core/widgets/guest_restriction_dialog.dart';
 import '../../../core/widgets/loading_indicator.dart';
 import '../../courses/providers/course_provider.dart';
 import '../providers/routine_provider.dart';
@@ -53,6 +55,7 @@ class RoutineScreen extends ConsumerWidget {
         onRefresh: () => notifier.fetchRoutines(),
         child: Column(
           children: [
+            const GuestModeBanner(),
             if (routineState.error != null)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -122,7 +125,10 @@ class RoutineScreen extends ConsumerWidget {
         heroTag: 'routine_fab',
         icon: const Icon(Icons.add),
         label: const Text('Add Class'),
-        onPressed: () => context.push('/routine/add?day=${routineState.selectedDay}'),
+        onPressed: () {
+          if (checkGuestRestricted(context, ref, action: 'add class schedules')) return;
+          context.push('/routine/add?day=${routineState.selectedDay}');
+        },
       ),
     );
   }
@@ -138,7 +144,10 @@ class RoutineScreen extends ConsumerWidget {
         title: 'No Classes Scheduled',
         subtitle: 'There are no classes scheduled for $dayName.',
         buttonText: 'Add Class for $dayName',
-        onButtonPressed: () => context.push('/routine/add?day=${routineState.selectedDay}'),
+        onButtonPressed: () {
+          if (checkGuestRestricted(context, ref, action: 'add class schedules')) return;
+          context.push('/routine/add?day=${routineState.selectedDay}');
+        },
       );
     }
 
@@ -149,9 +158,16 @@ class RoutineScreen extends ConsumerWidget {
         final routine = filtered[index];
         return RoutineCard(
           routine: routine,
-          onEdit: () => context.push('/routine/edit/${routine.id}'),
-          onDelete: () => _confirmDelete(context, ref, routine.id, routine.courseCode),
+          onEdit: () {
+            if (checkGuestRestricted(context, ref, action: 'edit class schedules')) return;
+            context.push('/routine/edit/${routine.id}');
+          },
+          onDelete: () {
+            if (checkGuestRestricted(context, ref, action: 'delete class schedules')) return;
+            _confirmDelete(context, ref, routine.id, routine.courseCode);
+          },
           onRecordAttendance: () {
+            if (checkGuestRestricted(context, ref, action: 'record attendance')) return;
             context.push(
               '/attendance?record=true&courseId=${routine.courseId}&courseName=${Uri.encodeComponent(routine.courseName)}',
             );
@@ -217,8 +233,14 @@ class RoutineScreen extends ConsumerWidget {
                 ...dayClasses.map((routine) {
                   return RoutineCard(
                     routine: routine,
-                    onEdit: () => context.push('/routine/edit/${routine.id}'),
-                    onDelete: () => _confirmDelete(context, ref, routine.id, routine.courseCode),
+                    onEdit: () {
+                      if (checkGuestRestricted(context, ref, action: 'edit class schedules')) return;
+                      context.push('/routine/edit/${routine.id}');
+                    },
+                    onDelete: () {
+                      if (checkGuestRestricted(context, ref, action: 'delete class schedules')) return;
+                      _confirmDelete(context, ref, routine.id, routine.courseCode);
+                    },
                   );
                 }),
             ],

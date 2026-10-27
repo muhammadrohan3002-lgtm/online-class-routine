@@ -1,6 +1,6 @@
 import { ObjectId } from 'mongodb';
 import { getDatabase } from '@/lib/mongodb';
-import { getAuthenticatedUser } from '@/lib/auth';
+import { getAuthenticatedUser, requireRegisteredUser } from '@/lib/auth';
 import { successResponse, errorResponse, notFoundResponse, unauthorizedResponse, serverErrorResponse } from '@/lib/api-response';
 import { doIntervalsOverlap, isTimeRangeValid } from '@/lib/validation';
 export async function GET(request, { params }) {
@@ -40,6 +40,8 @@ export async function PUT(request, { params }) {
         const user = await getAuthenticatedUser(request);
         if (!user)
             return unauthorizedResponse();
+        const guestErr = requireRegisteredUser(user);
+        if (guestErr) return guestErr;
         if (!ObjectId.isValid(params.id))
             return notFoundResponse('Invalid routine ID');
         const body = await request.json().catch(() => ({}));
@@ -118,6 +120,8 @@ export async function DELETE(request, { params }) {
         const user = await getAuthenticatedUser(request);
         if (!user)
             return unauthorizedResponse();
+        const guestErr = requireRegisteredUser(user);
+        if (guestErr) return guestErr;
         if (!ObjectId.isValid(params.id))
             return notFoundResponse('Invalid routine ID');
         const db = await getDatabase();

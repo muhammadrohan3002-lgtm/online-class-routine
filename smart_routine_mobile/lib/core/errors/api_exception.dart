@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 
 class ApiException implements Exception {
@@ -23,7 +24,12 @@ class ApiException implements Exception {
 
       case DioExceptionType.badResponse:
         final status = error.response?.statusCode;
-        final data = error.response?.data;
+        dynamic data = error.response?.data;
+        if (data is String) {
+          try {
+            data = jsonDecode(data);
+          } catch (_) {}
+        }
         String msg = 'An unexpected server error occurred ($status)';
 
         if (data is Map && data['error'] != null) {
@@ -50,7 +56,7 @@ class ApiException implements Exception {
 
       case DioExceptionType.connectionError:
         return ApiException(
-          message: 'Unable to connect to server. Ensure your backend is running at the configured URL.',
+          message: 'Unable to connect to backend server. Please verify your phone is on the same Wi-Fi network as your PC or configure server address in settings.',
           statusCode: 503,
         );
 

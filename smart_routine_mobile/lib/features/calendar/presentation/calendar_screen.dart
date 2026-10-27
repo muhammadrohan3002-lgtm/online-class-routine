@@ -6,6 +6,8 @@ import '../../../core/constants/app_strings.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/widgets/empty_state_view.dart';
 import '../../../core/widgets/error_banner.dart';
+import '../../../core/widgets/guest_mode_banner.dart';
+import '../../../core/widgets/guest_restriction_dialog.dart';
 import '../../../core/widgets/loading_indicator.dart';
 import '../providers/exam_provider.dart';
 import 'widgets/exam_card.dart';
@@ -47,6 +49,7 @@ class CalendarScreen extends ConsumerWidget {
         onRefresh: () => notifier.fetchExams(),
         child: Column(
           children: [
+            const GuestModeBanner(),
             if (examState.error != null)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -104,7 +107,10 @@ class CalendarScreen extends ConsumerWidget {
                           title: 'No Exams Scheduled',
                           subtitle: 'Stay ahead of your semester by adding your midterms, finals, and quizzes.',
                           buttonText: 'Add First Exam',
-                          onButtonPressed: () => context.push('/calendar/add'),
+                          onButtonPressed: () {
+                            if (checkGuestRestricted(context, ref, action: 'schedule exams and assessments')) return;
+                            context.push('/calendar/add');
+                          },
                         )
                       : ListView.builder(
                           padding: const EdgeInsets.fromLTRB(16, 4, 16, 80),
@@ -113,8 +119,14 @@ class CalendarScreen extends ConsumerWidget {
                             final exam = filtered[index];
                             return ExamCard(
                               exam: exam,
-                              onEdit: () => context.push('/calendar/edit/${exam.id}'),
-                              onDelete: () => _confirmDelete(context, ref, exam.id, exam.subject),
+                              onEdit: () {
+                                if (checkGuestRestricted(context, ref, action: 'edit exams')) return;
+                                context.push('/calendar/edit/${exam.id}');
+                              },
+                              onDelete: () {
+                                if (checkGuestRestricted(context, ref, action: 'delete exams')) return;
+                                _confirmDelete(context, ref, exam.id, exam.subject);
+                              },
                               onSetReminder: () async {
                                 await notificationService.showNotification(
                                   id: exam.id.hashCode,
@@ -141,7 +153,10 @@ class CalendarScreen extends ConsumerWidget {
         heroTag: 'calendar_fab',
         icon: const Icon(Icons.add),
         label: const Text('Add Exam'),
-        onPressed: () => context.push('/calendar/add'),
+        onPressed: () {
+          if (checkGuestRestricted(context, ref, action: 'schedule exams and assessments')) return;
+          context.push('/calendar/add');
+        },
       ),
     );
   }

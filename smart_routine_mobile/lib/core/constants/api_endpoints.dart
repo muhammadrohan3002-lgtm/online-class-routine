@@ -2,15 +2,34 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 
 class ApiEndpoints {
-  // Default development URLs (Phone Wi-Fi IP / Emulator / Web)
+  // Compile-time environment override (e.g. flutter build --dart-define=API_URL=https://production.com/api)
+  static const String _envApiUrl = String.fromEnvironment('API_URL');
+
+  // Candidate URLs for development
+  static const String wifiLanUrl = 'http://192.168.0.102:5000/api';
+  static const String adbReverseUrl = 'http://127.0.0.1:5000/api';
+  static const String emulatorUrl = 'http://10.0.2.2:5000/api';
+  static const String localhostUrl = 'http://localhost:5000/api';
+
+  // Candidate URLs list for auto-discovery fallback
+  static const List<String> candidateUrls = [
+    wifiLanUrl,
+    adbReverseUrl,
+    emulatorUrl,
+    localhostUrl,
+  ];
+
+  // Default development / production base URL
   static String get defaultBaseUrl {
-    if (kIsWeb) return 'http://localhost:5000/api';
-    // Use your PC's local Wi-Fi IP for physical phone connection
-    if (Platform.isAndroid) return 'http://192.168.0.105:5000/api';
-    return 'http://localhost:5000/api';
+    if (_envApiUrl.isNotEmpty) return _envApiUrl;
+    if (kIsWeb) return localhostUrl;
+    // For Android physical devices, prefer Wi-Fi LAN IP (192.168.0.102) so the phone
+    // connects over Wi-Fi without needing an active USB ADB reverse tunnel
+    if (Platform.isAndroid) return wifiLanUrl;
+    return localhostUrl;
   }
 
-  // Active base URL (dynamic, can be updated via StorageService)
+  // Active base URL (dynamic, can be updated via StorageService / ServerConfigScreen)
   static String baseUrl = defaultBaseUrl;
 
   // Auth endpoints

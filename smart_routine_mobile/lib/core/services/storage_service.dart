@@ -22,7 +22,7 @@ class StorageService {
 
     // Sync saved custom base URL if present
     final savedUrl = service.getBaseUrl();
-    if (savedUrl != null && savedUrl.isNotEmpty) {
+    if (savedUrl != null && savedUrl.isNotEmpty && savedUrl != 'http://127.0.0.1:5000/api') {
       ApiEndpoints.baseUrl = savedUrl;
     } else {
       ApiEndpoints.baseUrl = ApiEndpoints.defaultBaseUrl;

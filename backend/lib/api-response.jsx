@@ -26,6 +26,10 @@ export function forbiddenResponse(error = 'Forbidden: You do not have permission
     return errorResponse(error, 403);
 }
 
+export function guestForbiddenResponse(error = 'Guest mode is read-only. Please create an account or sign in to save your personal routine and data.') {
+    return errorResponse(error, 403, { code: 'GUEST_RESTRICTED', isGuest: true });
+}
+
 export function notFoundResponse(error = 'Resource not found') {
     return errorResponse(error, 404);
 }

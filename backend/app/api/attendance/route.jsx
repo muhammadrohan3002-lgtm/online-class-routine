@@ -1,6 +1,6 @@
 import { ObjectId } from 'mongodb';
 import { getDatabase } from '@/lib/mongodb';
-import { getAuthenticatedUser } from '@/lib/auth';
+import { getAuthenticatedUser, requireRegisteredUser } from '@/lib/auth';
 import { successResponse, errorResponse, conflictResponse, unauthorizedResponse, serverErrorResponse } from '@/lib/api-response';
 export async function GET(request) {
     try {
@@ -43,6 +43,8 @@ export async function POST(request) {
         const user = await getAuthenticatedUser(request);
         if (!user)
             return unauthorizedResponse();
+        const guestErr = requireRegisteredUser(user);
+        if (guestErr) return guestErr;
         const body = await request.json().catch(() => ({}));
         const { courseId, courseName, date, status, notes } = body;
         if (!courseId || !ObjectId.isValid(courseId)) {

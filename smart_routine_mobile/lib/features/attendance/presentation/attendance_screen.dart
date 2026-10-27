@@ -5,6 +5,8 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/date_time_utils.dart';
 import '../../../core/widgets/empty_state_view.dart';
 import '../../../core/widgets/error_banner.dart';
+import '../../../core/widgets/guest_mode_banner.dart';
+import '../../../core/widgets/guest_restriction_dialog.dart';
 import '../../../core/widgets/loading_indicator.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../providers/attendance_provider.dart';
@@ -53,6 +55,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen>
   }
 
   void _showRecordDialog({String? courseId, String? courseName}) {
+    if (checkGuestRestricted(context, ref, action: 'record attendance')) return;
     showDialog(
       context: context,
       builder: (ctx) => RecordAttendanceDialog(
@@ -95,6 +98,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen>
             ? const LoadingIndicator(message: 'Calculating attendance...')
             : Column(
                 children: [
+                  const GuestModeBanner(),
                   if (attendanceState.error != null)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -300,7 +304,10 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen>
               IconButton(
                 icon: const Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.error),
                 tooltip: 'Delete Log',
-                onPressed: () => notifier.deleteRecord(item.id),
+                onPressed: () {
+                  if (checkGuestRestricted(context, ref, action: 'delete attendance logs')) return;
+                  notifier.deleteRecord(item.id);
+                },
               ),
             ],
           ),

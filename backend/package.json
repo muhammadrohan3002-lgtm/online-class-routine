@@ -10,6 +10,7 @@
     "start": "node ./node_modules/next/dist/bin/next start -H 0.0.0.0 -p 5000",
     "lint": "next lint",
     "test": "node --test tests/business-logic.test.mjs",
+    "test:auth": "node --env-file=.env ./tests/auth-e2e.mjs",
     "seed": "node --env-file=.env ./scripts/seed.mjs"
   },
   "dependencies": {

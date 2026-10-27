@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/guest_restriction_dialog.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
 
@@ -114,7 +115,7 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                     ),
                   ],
-                  if (user != null && (user.email == 'guest@cse.edu' || user.id.contains('guest'))) ...[
+                  if (user != null && (user.isGuest || user.email == 'guest@cse.edu' || user.id.contains('guest'))) ...[
                     const SizedBox(height: 10),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -134,6 +135,31 @@ class ProfileScreen extends ConsumerWidget {
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
                               color: AppColors.secondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ] else if (user != null) ...[
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.verified_user_rounded, size: 14, color: AppColors.primary),
+                          SizedBox(width: 6),
+                          Text(
+                            'Registered Student Account',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primary,
                             ),
                           ),
                         ],
@@ -174,7 +200,66 @@ class ProfileScreen extends ConsumerWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
+
+            // If in guest mode, show account creation prompt
+            if (user != null && (user.isGuest || user.email == 'guest@cse.edu' || user.id.contains('guest')))
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primary.withOpacity(0.08),
+                      AppColors.secondary.withOpacity(0.08),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.primary.withOpacity(0.25)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.cloud_sync_rounded, color: AppColors.primary, size: 24),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Save to Your Own Account',
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Switch from Guest to a personal student account anytime.',
+                            style: TextStyle(fontSize: 11, color: Theme.of(context).hintColor),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () => context.push('/register'),
+                      child: const Text('Sign Up', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              ),
 
             // Navigation Links
             _buildSectionHeader(context, 'Academic Shortcuts'),
@@ -210,8 +295,13 @@ class ProfileScreen extends ConsumerWidget {
               icon: Icons.person_outline_rounded,
               color: const Color(0xFF0891B2),
               title: 'Edit Profile',
-              subtitle: 'Update name, ID, and university information',
-              onTap: () => context.push('/profile/edit'),
+              subtitle: (user?.isGuest ?? true)
+                  ? 'Registration required to save profile'
+                  : 'Update name, ID, and university information',
+              onTap: () {
+                if (checkGuestRestricted(context, ref, action: 'edit student profile')) return;
+                context.push('/profile/edit');
+              },
             ),
             _buildSettingsTile(
               context,
@@ -243,22 +333,40 @@ class ProfileScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
 
-            // Sign Out Button
+            // Sign Out / Exit Guest Mode Button
             ListTile(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
-                side: BorderSide(color: AppColors.error.withOpacity(0.3)),
+                side: BorderSide(
+                  color: (user?.isGuest ?? true)
+                      ? AppColors.secondary.withOpacity(0.5)
+                      : AppColors.error.withOpacity(0.3),
+                ),
               ),
-              tileColor: AppColors.errorContainer.withOpacity(0.3),
-              leading: const Icon(Icons.logout_rounded, color: AppColors.error),
-              title: const Text(
-                'Sign Out',
+              tileColor: (user?.isGuest ?? true)
+                  ? AppColors.secondary.withOpacity(0.08)
+                  : AppColors.errorContainer.withOpacity(0.3),
+              leading: Icon(
+                (user?.isGuest ?? true) ? Icons.exit_to_app_rounded : Icons.logout_rounded,
+                color: (user?.isGuest ?? true) ? AppColors.secondary : AppColors.error,
+              ),
+              title: Text(
+                (user?.isGuest ?? true) ? 'Exit Guest Mode / Sign In' : 'Sign Out',
                 style: TextStyle(
-                  color: AppColors.errorText,
+                  color: (user?.isGuest ?? true) ? AppColors.secondary : AppColors.errorText,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              onTap: () => _confirmSignOut(context, ref),
+              subtitle: Text(
+                (user?.isGuest ?? true)
+                    ? 'Return to welcome screen to create or access student account'
+                    : 'End student session on this device',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Theme.of(context).hintColor,
+                ),
+              ),
+              onTap: () => _confirmSignOut(context, ref, isGuest: user?.isGuest ?? true),
             ),
             const SizedBox(height: 30),
           ],
@@ -331,22 +439,31 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  void _confirmSignOut(BuildContext context, WidgetRef ref) {
+  void _confirmSignOut(BuildContext context, WidgetRef ref, {bool isGuest = false}) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Sign Out'),
-        content: const Text('Are you sure you want to sign out of Smart Routine?'),
+        title: Text(isGuest ? 'Exit Guest Mode' : 'Sign Out'),
+        content: Text(
+          isGuest
+              ? 'Exit guest exploration and return to welcome screen to create or sign in to your student account?'
+              : 'Are you sure you want to sign out of Smart Routine?',
+        ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isGuest ? AppColors.secondary : AppColors.error,
+            ),
             onPressed: () {
               Navigator.pop(ctx);
               ref.read(authProvider.notifier).logout();
-              context.go('/login');
+              context.go('/welcome');
             },
-            child: const Text('Sign Out', style: TextStyle(color: Colors.white)),
+            child: Text(
+              isGuest ? 'Exit Guest Mode' : 'Sign Out',
+              style: const TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),

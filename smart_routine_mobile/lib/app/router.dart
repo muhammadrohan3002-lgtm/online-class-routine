@@ -5,6 +5,7 @@ import '../features/auth/presentation/forgot_password_screen.dart';
 import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/register_screen.dart';
 import '../features/auth/presentation/reset_password_screen.dart';
+import '../features/auth/presentation/welcome_screen.dart';
 import '../features/auth/providers/auth_provider.dart';
 import '../features/attendance/presentation/attendance_screen.dart';
 import '../features/calendar/presentation/add_edit_exam_screen.dart';
@@ -32,17 +33,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isAuth = authState.isAuthenticated;
       final loc = state.matchedLocation;
 
-      final isPublicRoute = loc == '/login' ||
+      final isPublicRoute = loc == '/welcome' ||
+          loc == '/login' ||
           loc == '/register' ||
           loc == '/forgot-password' ||
           loc == '/reset-password' ||
           loc == '/settings/server';
 
       if (!isAuth && !isPublicRoute) {
-        return '/login';
+        return '/welcome';
       }
 
-      if (isAuth && (loc == '/login' || loc == '/register')) {
+      if (isAuth && (loc == '/welcome' || loc == '/login' || loc == '/register')) {
         return '/dashboard';
       }
 
@@ -51,8 +53,16 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       // Auth routes
       GoRoute(
+        path: '/welcome',
+        builder: (context, state) => const WelcomeScreen(),
+      ),
+      GoRoute(
         path: '/login',
-        builder: (context, state) => const LoginScreen(),
+        builder: (context, state) {
+          final email = state.uri.queryParameters['email'];
+          final registered = state.uri.queryParameters['registered'] == 'true';
+          return LoginScreen(initialEmail: email, isNewlyRegistered: registered);
+        },
       ),
       GoRoute(
         path: '/register',

@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/empty_state_view.dart';
 import '../../../core/widgets/error_banner.dart';
+import '../../../core/widgets/guest_mode_banner.dart';
+import '../../../core/widgets/guest_restriction_dialog.dart';
 import '../../../core/widgets/loading_indicator.dart';
 import '../providers/course_provider.dart';
 
@@ -25,6 +27,7 @@ class CoursesScreen extends ConsumerWidget {
             ? const LoadingIndicator(message: 'Loading courses...')
             : Column(
                 children: [
+                  const GuestModeBanner(),
                   if (courseState.error != null)
                     Padding(
                       padding: const EdgeInsets.all(16),
@@ -40,7 +43,10 @@ class CoursesScreen extends ConsumerWidget {
                             title: 'No Courses Added Yet',
                             subtitle: 'Add your semester courses to link routines, exams, and attendance.',
                             buttonText: 'Add First Course',
-                            onButtonPressed: () => context.push('/courses/add'),
+                            onButtonPressed: () {
+                              if (checkGuestRestricted(context, ref, action: 'add semester courses')) return;
+                              context.push('/courses/add');
+                            },
                           )
                         : ListView.builder(
                             padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
@@ -143,12 +149,18 @@ class CoursesScreen extends ConsumerWidget {
                                                     IconButton(
                                                       icon: const Icon(Icons.edit_outlined, size: 18),
                                                       tooltip: 'Edit Course',
-                                                      onPressed: () => context.push('/courses/edit/${course.id}'),
+                                                      onPressed: () {
+                                                        if (checkGuestRestricted(context, ref, action: 'edit courses')) return;
+                                                        context.push('/courses/edit/${course.id}');
+                                                      },
                                                     ),
                                                     IconButton(
                                                       icon: const Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.error),
                                                       tooltip: 'Delete Course',
-                                                      onPressed: () => _confirmDelete(context, ref, course.id, course.name),
+                                                      onPressed: () {
+                                                        if (checkGuestRestricted(context, ref, action: 'delete courses')) return;
+                                                        _confirmDelete(context, ref, course.id, course.name);
+                                                      },
                                                     ),
                                                   ],
                                                 ),
@@ -171,7 +183,10 @@ class CoursesScreen extends ConsumerWidget {
         heroTag: 'courses_fab',
         icon: const Icon(Icons.add),
         label: const Text('New Course'),
-        onPressed: () => context.push('/courses/add'),
+        onPressed: () {
+          if (checkGuestRestricted(context, ref, action: 'add semester courses')) return;
+          context.push('/courses/add');
+        },
       ),
     );
   }

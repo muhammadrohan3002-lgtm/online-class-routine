@@ -5,6 +5,8 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/widgets/empty_state_view.dart';
 import '../../../core/widgets/error_banner.dart';
+import '../../../core/widgets/guest_mode_banner.dart';
+import '../../../core/widgets/guest_restriction_dialog.dart';
 import '../../../core/widgets/loading_indicator.dart';
 import '../providers/task_provider.dart';
 import 'widgets/task_card.dart';
@@ -75,6 +77,7 @@ class TasksScreen extends ConsumerWidget {
         onRefresh: () => notifier.fetchTasks(),
         child: Column(
           children: [
+            const GuestModeBanner(),
             if (taskState.error != null)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -164,7 +167,10 @@ class TasksScreen extends ConsumerWidget {
                               ? 'You have completed all pending tasks! Great job.'
                               : 'No tasks match the active filters.',
                           buttonText: 'Create New Task',
-                          onButtonPressed: () => context.push('/tasks/add'),
+                          onButtonPressed: () {
+                            if (checkGuestRestricted(context, ref, action: 'create new tasks')) return;
+                            context.push('/tasks/add');
+                          },
                         )
                       : ListView.builder(
                           padding: const EdgeInsets.fromLTRB(16, 4, 16, 80),
@@ -173,9 +179,18 @@ class TasksScreen extends ConsumerWidget {
                             final task = filtered[index];
                             return TaskCard(
                               task: task,
-                              onToggleStatus: () => notifier.toggleTaskStatus(task.id),
-                              onEdit: () => context.push('/tasks/edit/${task.id}'),
-                              onDelete: () => _confirmDelete(context, ref, task.id, task.title),
+                              onToggleStatus: () {
+                                if (checkGuestRestricted(context, ref, action: 'update task completion status')) return;
+                                notifier.toggleTaskStatus(task.id);
+                              },
+                              onEdit: () {
+                                if (checkGuestRestricted(context, ref, action: 'edit tasks')) return;
+                                context.push('/tasks/edit/${task.id}');
+                              },
+                              onDelete: () {
+                                if (checkGuestRestricted(context, ref, action: 'delete tasks')) return;
+                                _confirmDelete(context, ref, task.id, task.title);
+                              },
                             );
                           },
                         ),
@@ -187,7 +202,10 @@ class TasksScreen extends ConsumerWidget {
         heroTag: 'tasks_fab',
         icon: const Icon(Icons.add),
         label: const Text('Add Task'),
-        onPressed: () => context.push('/tasks/add'),
+        onPressed: () {
+          if (checkGuestRestricted(context, ref, action: 'create new tasks')) return;
+          context.push('/tasks/add');
+        },
       ),
     );
   }

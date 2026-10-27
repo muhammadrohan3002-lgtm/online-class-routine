@@ -6,6 +6,7 @@ import '../../../core/constants/app_strings.dart';
 import '../../../core/utils/date_time_utils.dart';
 import '../../../core/widgets/custom_button.dart';
 import '../../../core/widgets/custom_text_field.dart';
+import '../../../core/widgets/guest_restriction_dialog.dart';
 import '../../courses/providers/course_provider.dart';
 import '../providers/exam_provider.dart';
 
@@ -81,6 +82,13 @@ class _AddEditExamScreenState extends ConsumerState<AddEditExamScreen> {
   }
 
   Future<void> _handleSave() async {
+    if (checkGuestRestricted(
+      context,
+      ref,
+      action: widget.examId != null ? 'edit exams' : 'schedule exams and assessments',
+    )) {
+      return;
+    }
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSaving = true);

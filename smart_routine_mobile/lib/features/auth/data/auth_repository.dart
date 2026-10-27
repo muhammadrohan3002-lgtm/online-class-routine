@@ -30,7 +30,7 @@ class AuthRepository {
       final res = await _apiClient.post(ApiEndpoints.guest);
       final token = res['token']?.toString() ?? 'guest_token';
       final userMap = res['user'] as Map<String, dynamic>;
-      final user = UserModel.fromJson(userMap);
+      final user = UserModel.fromJson(userMap).copyWith(isGuest: true);
 
       await _storageService.setToken(token);
       await _storageService.setUser(user);
@@ -45,6 +45,7 @@ class AuthRepository {
         department: 'Computer Science & Engineering',
         institution: 'University of Engineering & Technology',
         attendanceThreshold: 75,
+        isGuest: true,
       );
       await _storageService.setToken('guest_token_offline');
       await _storageService.setUser(fallbackGuest);
@@ -72,13 +73,8 @@ class AuthRepository {
       },
     );
 
-    final token = res['token']?.toString() ?? '';
     final userMap = res['user'] as Map<String, dynamic>;
     final user = UserModel.fromJson(userMap);
-
-    await _storageService.setToken(token);
-    await _storageService.setUser(user);
-
     return user;
   }
 

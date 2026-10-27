@@ -130,8 +130,8 @@ class _ServerConfigScreenState extends ConsumerState<ServerConfigScreen> {
                 children: [
                   ActionChip(
                     avatar: const Icon(Icons.wifi_rounded, size: 16),
-                    label: const Text('Wi-Fi Phone (192.168.0.105)'),
-                    onPressed: () => _applyPreset('http://192.168.0.105:5000/api'),
+                    label: const Text('Wi-Fi Phone (192.168.0.102)'),
+                    onPressed: () => _applyPreset('http://192.168.0.102:5000/api'),
                   ),
                   ActionChip(
                     avatar: const Icon(Icons.usb_rounded, size: 16),

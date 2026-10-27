@@ -123,7 +123,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }) async {
     state = state.copyWith(status: AuthStatus.loading, errorMessage: null);
     try {
-      final user = await _repository.register(
+      await _repository.register(
         name: name.trim(),
         email: email.trim(),
         password: password,
@@ -132,8 +132,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         institution: institution?.trim(),
       );
       state = state.copyWith(
-        status: AuthStatus.authenticated,
-        user: user,
+        status: AuthStatus.unauthenticated,
+        user: null,
       );
       return true;
     } on ApiException catch (e) {

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/custom_button.dart';
 import '../../../core/widgets/custom_text_field.dart';
+import '../../../core/widgets/guest_restriction_dialog.dart';
 import '../../auth/providers/auth_provider.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
@@ -47,6 +48,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   Future<void> _handleSave() async {
+    if (checkGuestRestricted(context, ref, action: 'save profile changes')) return;
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSaving = true);
@@ -75,6 +77,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = ref.watch(authProvider).user;
+    final isGuest = user == null || user.isGuest || user.email == 'guest@cse.edu';
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Edit Profile'),
@@ -87,6 +92,29 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (isGuest) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.warningContainer.withOpacity(0.4),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.warning.withOpacity(0.5)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.info_outline_rounded, color: AppColors.warning, size: 20),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Guest Mode: Profile editing is preview only. Create an account to save personal info.',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 CustomTextField(
                   controller: _nameController,
                   label: 'Full Name *',

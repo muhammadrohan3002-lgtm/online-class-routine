@@ -43,6 +43,7 @@ export async function POST(request) {
                 department: 'Computer Science & Engineering',
                 institution: 'University of Engineering & Technology',
                 attendanceThreshold: 75,
+                isGuest: true,
                 createdAt: now,
                 updatedAt: now,
             });
@@ -186,6 +187,7 @@ export async function POST(request) {
             userId: guestUser._id.toString(),
             email: guestUser.email,
             name: guestUser.name,
+            isGuest: true,
         });
         const userSafe = {
             id: guestUser._id.toString(),
@@ -195,6 +197,7 @@ export async function POST(request) {
             department: guestUser.department || 'Computer Science & Engineering',
             institution: guestUser.institution || 'University of Engineering & Technology',
             attendanceThreshold: guestUser.attendanceThreshold ?? 75,
+            isGuest: true,
             createdAt: guestUser.createdAt,
         };
         return successResponse({ token, user: userSafe, isGuest: true });
