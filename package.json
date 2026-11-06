@@ -1,0 +1,17 @@
+{
+  "name": "smart-routine-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix backend run dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "start:backend": "npm --prefix backend run start",
+    "build:backend": "npm --prefix backend run build",
+    "test:auth": "npm --prefix backend run test:auth",
+    "dev:mobile": "powershell -Command \"adb connect 192.168.0.104:5555; adb reverse tcp:5000 tcp:5000; cd smart_routine_mobile; flutter run\""
+  },
+  "dependencies": {
+    "mongodb": "^7.7.0"
+  }
+}
+
