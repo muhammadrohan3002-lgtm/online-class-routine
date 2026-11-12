@@ -195,7 +195,7 @@ export async function POST(request) {
             email: guestUser.email,
             studentId: guestUser.studentId || 'GUEST-CSE-01',
             department: guestUser.department || 'Computer Science & Engineering',
-            institution: guestUser.institution || 'University of Engineering & Technology',
+            institution: guestUser.institution || 'CITY UNIVERSITY',
             attendanceThreshold: guestUser.attendanceThreshold ?? 75,
             isGuest: true,
             createdAt: guestUser.createdAt,

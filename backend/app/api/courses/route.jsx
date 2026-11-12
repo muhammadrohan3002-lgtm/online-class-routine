@@ -41,7 +41,7 @@ export async function POST(request) {
             return errorResponse('Course name is required');
         }
         if (!code || typeof code !== 'string' || !code.trim()) {
-            return errorResponse('Course code is required (e.g. CSE 320)');
+            return errorResponse('Course code is required');
         }
         const db = await getDatabase();
         const now = new Date();
