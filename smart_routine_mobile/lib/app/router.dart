@@ -54,7 +54,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Auth routes
       GoRoute(
         path: '/welcome',
-        builder: (context, state) => const WelcomeScreen(),
+        builder: (context, state) {
+          final email = state.uri.queryParameters['email'];
+          final registered = state.uri.queryParameters['registered'] == 'true';
+          return WelcomeScreen(initialEmail: email, isNewlyRegistered: registered);
+        },
       ),
       GoRoute(
         path: '/login',

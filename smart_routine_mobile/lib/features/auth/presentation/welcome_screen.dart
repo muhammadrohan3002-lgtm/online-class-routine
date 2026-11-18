@@ -1,19 +1,63 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_strings.dart';
+import '../../../core/widgets/custom_button.dart';
+import '../../../core/widgets/custom_text_field.dart';
 import '../../../core/widgets/error_banner.dart';
 import '../providers/auth_provider.dart';
 
 class WelcomeScreen extends ConsumerStatefulWidget {
-  const WelcomeScreen({super.key});
+  final String? initialEmail;
+  final bool isNewlyRegistered;
+
+  const WelcomeScreen({
+    super.key,
+    this.initialEmail,
+    this.isNewlyRegistered = false,
+  });
 
   @override
   ConsumerState<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
 class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _emailController;
+  late final TextEditingController _passwordController;
+  late final TapGestureRecognizer _registerRecognizer;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailController = TextEditingController(text: widget.initialEmail ?? '');
+    _passwordController = TextEditingController();
+    _registerRecognizer = TapGestureRecognizer()
+      ..onTap = () => context.push('/register');
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _registerRecognizer.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final success = await ref.read(authProvider.notifier).login(
+          _emailController.text.trim(),
+          _passwordController.text,
+        );
+
+    if (success && mounted) {
+      context.go('/dashboard');
+    }
+  }
+
   Future<void> _handleGuestAccess() async {
     final success = await ref.read(authProvider.notifier).loginAsGuest();
     if (success && mounted) {
@@ -24,321 +68,336 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
       appBar: AppBar(
-        title: const Text(AppStrings.appName),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_ethernet_rounded),
+            icon: Icon(
+              Icons.settings_ethernet_rounded,
+              size: 20,
+              color: theme.hintColor,
+            ),
             tooltip: 'Server Connection Settings',
             onPressed: () => context.push('/settings/server'),
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 520),
+              constraints: const BoxConstraints(maxWidth: 420),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Hero App Badge
+                  // ==========================================
+                  // TOP SECTION: Small Logo + App Name
+                  // ==========================================
                   Center(
-                    child: Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [AppColors.primary, AppColors.secondary],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.35),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.school_rounded,
-                        size: 44,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // App Title & Headline
-                  Text(
-                    'Smart Routine & Management',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 24,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Your complete university timetable, task manager, and attendance tracker.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).hintColor,
-                          height: 1.4,
-                        ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  if (authState.errorMessage != null) ...[
-                    ErrorBanner(message: authState.errorMessage!),
-                    const SizedBox(height: 16),
-                  ],
-
-                  // Feature Pills Summary
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildFeaturePill(context, Icons.calendar_today_rounded, 'Routines'),
-                      const SizedBox(width: 8),
-                      _buildFeaturePill(context, Icons.how_to_reg_rounded, 'Attendance'),
-                      const SizedBox(width: 8),
-                      _buildFeaturePill(context, Icons.task_alt_rounded, 'Tasks'),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Access Option Header
-                  Text(
-                    'CHOOSE HOW TO GET STARTED',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.2,
-                      color: Theme.of(context).hintColor,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // OPTION 1: Continue as Guest Card
-                  _buildAccessOptionCard(
-                    context,
-                    badgeText: 'INSTANT ACCESS',
-                    badgeColor: AppColors.secondary,
-                    icon: Icons.person_pin_circle_outlined,
-                    iconColor: AppColors.secondary,
-                    title: 'Continue as Guest',
-                    subtitle: 'Instant view-only exploration with pre-loaded university timetable, courses, and sample tasks. No account required.',
-                    actionWidget: SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          side: BorderSide(
-                            color: Theme.of(context).colorScheme.primary,
-                            width: 1.5,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        icon: authState.isLoading
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.arrow_forward_rounded, size: 20),
-                        label: Text(
-                          authState.isLoading ? 'Preparing Guest Session...' : 'Explore as Guest',
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        onPressed: authState.isLoading ? null : _handleGuestAccess,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // OPTION 2: Login / Create Account Card
-                  _buildAccessOptionCard(
-                    context,
-                    badgeText: 'RECOMMENDED FOR STUDENTS',
-                    badgeColor: AppColors.primary,
-                    icon: Icons.account_circle_outlined,
-                    iconColor: AppColors.primary,
-                    title: 'Student Account',
-                    subtitle: 'Register or log in to securely store your personal classes, attendance records, and exams in the cloud.',
-                    actionWidget: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 2,
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withOpacity(0.25),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                           ),
-                          icon: const Icon(Icons.login_rounded, size: 20),
-                          label: const Text(
-                            'Sign In to Your Account',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          child: const Icon(
+                            Icons.school_rounded,
+                            size: 26,
+                            color: Colors.white,
                           ),
-                          onPressed: () => context.push('/login'),
                         ),
-                        const SizedBox(height: 10),
-                        OutlinedButton.icon(
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Smart Routine',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            letterSpacing: -0.2,
+                            color: isDark
+                                ? AppColors.textPrimaryDark
+                                : AppColors.textPrimaryLight,
                           ),
-                          icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
-                          label: const Text(
-                            'Create New Account',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          onPressed: () => context.push('/register'),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
+
+                  // ==========================================
+                  // MAIN LOGIN CARD
+                  // ==========================================
+                  Container(
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.cardDark : AppColors.cardLight,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(isDark ? 0.3 : 0.04),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Heading: "Welcome Back"
+                          Text(
+                            'Welcome Back',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+
+                          // Subtitle: "Sign in to continue"
+                          Text(
+                            'Sign in to continue',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: theme.hintColor,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Newly Registered Banner
+                          if (widget.isNewlyRegistered) ...[
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 16),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: AppColors.successContainer.withOpacity(0.5),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: AppColors.success.withOpacity(0.3)),
+                              ),
+                              child: const Row(
+                                children: [
+                                  Icon(Icons.check_circle_rounded, color: AppColors.success, size: 18),
+                                  SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      'Account created! Please sign in.',
+                                      style: TextStyle(
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.successText,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+
+                          // Error Banner
+                          if (authState.errorMessage != null) ...[
+                            ErrorBanner(message: authState.errorMessage!),
+                            const SizedBox(height: 16),
+                          ],
+
+                          // Email input field with email icon
+                          CustomTextField(
+                            controller: _emailController,
+                            label: 'Email',
+                            hint: 'student@example.com',
+                            prefixIcon: Icons.email_outlined,
+                            keyboardType: TextInputType.emailAddress,
+                            validator: (val) {
+                              if (val == null || val.trim().isEmpty) {
+                                return 'Email is required';
+                              }
+                              if (!val.contains('@') || !val.contains('.')) {
+                                return 'Enter a valid email address';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 14),
+
+                          // Password input field with show/hide password functionality
+                          CustomTextField(
+                            controller: _passwordController,
+                            label: 'Password',
+                            hint: 'Enter your password',
+                            prefixIcon: Icons.lock_outline_rounded,
+                            isPassword: true,
+                            validator: (val) {
+                              if (val == null || val.isEmpty) {
+                                return 'Password is required';
+                              }
+                              if (val.length < 6) {
+                                return 'Password must be at least 6 characters';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 4),
+
+                          // Forgot Password? option
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: () => context.push('/forgot-password'),
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                minimumSize: const Size(0, 32),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                foregroundColor: theme.hintColor,
+                              ),
+                              child: const Text(
+                                'Forgot Password?',
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Full-width primary Login button
+                          CustomButton(
+                            text: 'Login',
+                            isLoading: authState.isLoading,
+                            onPressed: _handleLogin,
+                            height: 48,
+                          ),
+                          const SizedBox(height: 16),
+
+                          // ==========================================
+                          // REGISTER OPTION
+                          // ==========================================
+                          Center(
+                            child: Text.rich(
+                              TextSpan(
+                                text: "Don't have an account? ",
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: theme.hintColor,
+                                ),
+                                children: [
+                                  TextSpan(
+                                    text: 'Register',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                    recognizer: _registerRecognizer,
+                                  ),
+                                ],
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+
+                          // ==========================================
+                          // GUEST OPTION: Divider with "OR" + Button
+                          // ==========================================
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Divider(
+                                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                                  thickness: 1,
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                child: Text(
+                                  'OR',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: theme.hintColor.withOpacity(0.7),
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Divider(
+                                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                                  thickness: 1,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Outlined button: "Continue as Guest"
+                          SizedBox(
+                            height: 42,
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: isDark
+                                    ? AppColors.textPrimaryDark
+                                    : AppColors.textPrimaryLight,
+                                side: BorderSide(
+                                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                                  width: 1.2,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              onPressed: authState.isLoading ? null : _handleGuestAccess,
+                              child: authState.isLoading
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    )
+                                  : const Text(
+                                      'Continue as Guest',
+                                      style: TextStyle(
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildFeaturePill(BuildContext context, IconData icon, String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: AppColors.primary),
-          const SizedBox(width: 5),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAccessOptionCard(
-    BuildContext context, {
-    required String badgeText,
-    required Color badgeColor,
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String subtitle,
-    required Widget actionWidget,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.4),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: iconColor, size: 24),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: badgeColor.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        badgeText,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: badgeColor,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 17,
-                          ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            subtitle,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).hintColor,
-                  height: 1.4,
-                  fontSize: 13,
-                ),
-          ),
-          const SizedBox(height: 16),
-          actionWidget,
-        ],
       ),
     );
   }
